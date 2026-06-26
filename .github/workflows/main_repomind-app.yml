@@ -36,18 +36,16 @@ jobs:
 
       - name: Create deployment package
         run: |
-          mkdir -p deploy
-          cp -r backend deploy/backend
-          cp -r frontend/.next deploy/frontend/.next
+          mkdir -p deploy/backend
+          mkdir -p deploy/frontend/.next
+          cp -r backend/. deploy/backend/
+          cp -r frontend/.next/standalone/. deploy/frontend/.next/standalone/
+          cp -r frontend/.next/static deploy/frontend/.next/static
+          cp -r frontend/.next/server deploy/frontend/.next/server 2>/dev/null || true
           cp -r frontend/public deploy/frontend/public 2>/dev/null || true
           cp package.json deploy/
-          zip -r deploy.zip deploy/
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: deploy.zip
+          cd deploy
+          zip -r ../deploy.zip .
 
   deploy:
     runs-on: ubuntu-latest

@@ -42,10 +42,12 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/_next/static', express.static(staticDir));
   app.use('/public', express.static(publicDir));
 
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      const nextServer = require(path.join(nextDir, 'server.js'));
-    }
+  // Serve standalone Next.js for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(nextDir, 'public', 'index.html'), (err) => {
+      if (err) res.sendFile(path.join(publicDir, '404.html'), () => res.status(404).end());
+    });
   });
 }
 
