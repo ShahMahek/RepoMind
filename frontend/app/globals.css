@@ -1,0 +1,272 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base Theme ─────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: #ffffff;
+  color: #24292f;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  height: 100%;
+}
+
+/* ─── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f6f8fa; }
+::-webkit-scrollbar-thumb { background: #d0d7de; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #57606a; }
+
+/* ─── Markdown in chat ───────────────────────── */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  color: #24292f;
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+
+.markdown-body p {
+  margin: 6px 0;
+  line-height: 1.6;
+  color: #24292f;
+}
+
+.markdown-body ul, .markdown-body ol {
+  margin: 6px 0 6px 20px;
+}
+
+.markdown-body li { margin: 4px 0; }
+
+.markdown-body code {
+  background: #eaeef2;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  color: #0550ae;
+}
+
+.markdown-body pre {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.markdown-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #24292f;
+}
+
+.markdown-body a {
+  color: #2ea043;
+  text-decoration: none;
+}
+
+.markdown-body a:hover { text-decoration: underline; }
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 0.9em;
+}
+
+.markdown-body th {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  padding: 8px 12px;
+  text-align: left;
+  color: #24292f;
+}
+
+.markdown-body td {
+  border: 1px solid #d0d7de;
+  padding: 8px 12px;
+  color: #24292f;
+}
+
+.markdown-body tr:hover { background: #f6f8fa; }
+
+/* ─── Animations ─────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
+@keyframes pulse-dot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+  40%           { transform: scale(1); opacity: 1; }
+}
+
+.typing-dot { animation: pulse-dot 1.2s infinite ease-in-out; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ─── Auth Switch Card (login ⇄ register sliding panel) ──────── */
+/*
+   Structure:
+   .auth-switch-card            -> fixed-size 2-pane shell, clips the slide
+     .auth-panel                -> green brand pane, slides left/right
+     .auth-form-panel           -> white-on-dark form pane, fills the rest
+
+   Direction is controlled purely by the .is-login / .is-register
+   class added in JSX, so no inline styles or JS measuring is needed.
+*/
+
+/* Both panes live in the SAME grid cell so they can cross-fade/slide
+   over one another, like the red panel sliding over the form in the
+   reference images. */
+.auth-switch-card {
+  max-width: 760px;
+  min-height: 460px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+  background: #ffffff;
+  position: relative;
+}
+
+.auth-panel,
+.auth-form-panel {
+  min-height: 100%;
+  transition: transform 0.55s ease, border-radius 0.55s ease;
+}
+
+.auth-panel {
+  grid-column: 2 / 3;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 2.75rem;
+  background: linear-gradient(160deg, #2ea043 0%, #238636 100%);
+  border-radius: 0;
+  z-index: 2;
+}
+
+.auth-form-panel {
+  grid-column: 1 / 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.75rem 3rem;
+  background: #ffffff;
+  z-index: 1;
+}
+
+.auth-form-panel > * {
+  width: 100%;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Register mode: green panel right, form left (default grid order) ── */
+.is-register .auth-panel {
+  transform: translateX(0%);
+  border-radius: 1.25rem;
+}
+
+.is-register .auth-form-panel {
+  transform: translateX(0%);
+}
+
+/* ── Login mode: swap sides — green panel slides to col 1, form slides to col 2 ── */
+.is-login .auth-panel {
+  transform: translateX(-100%);
+    border-radius: 1.25rem;
+}
+
+.is-login .auth-form-panel {
+  transform: translateX(100%);
+}
+
+.auth-panel-btn {
+  display: inline-block;
+  padding: 0.65rem 1.75rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 0.6rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.auth-panel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #1f7a34;
+}
+
+/* The inline "switch mode" link under the form is redundant on
+   desktop (the green panel already has its own switch button), so
+   hide it there and reserve it for the mobile stacked layout. */
+.auth-mobile-switch {
+  display: none;
+}
+
+/* ─── Responsive: stack panels on small screens ───────────────── */
+@media (max-width: 768px) {
+  .auth-switch-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    max-width: 420px;
+  }
+
+  .auth-panel {
+    display: none; /* the sliding brand pane doesn't fit a phone width */
+  }
+
+  .auth-form-panel {
+    grid-column: 1 / 2;
+    padding: 2.25rem 1.5rem;
+  }
+
+  .auth-form-panel > * {
+    max-width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .auth-mobile-switch {
+    display: block;
+  }
+}
+
+/* ─── Glass green page background ─────────────────────────── */
+.auth-page-bg {
+  background:
+    radial-gradient(circle at 10% 15%, rgba(46, 160, 67, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 90% 10%, rgba(134, 239, 172, 0.4) 0%, transparent 38%),
+    radial-gradient(circle at 88% 88%, rgba(22, 101, 52, 0.35) 0%, transparent 42%),
+    radial-gradient(circle at 12% 85%, rgba(190, 247, 198, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.2) 0%, transparent 60%),
+    #f9fef9;
+}
+
+.auth-switch-card {
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(46, 160, 67, 0.15);
+}
