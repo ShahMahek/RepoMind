@@ -10,7 +10,6 @@ const authRoutes = require('./routes/auth');
 const githubRoutes = require('./routes/github');
 const chatRoutes = require('./routes/chat');
 const sessionsRoutes = require('./routes/sessions');
-const chatHistoryRoutes = require('./routes/chatHistory');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,7 +25,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/chat', chatHistoryRoutes);
 app.use('/api/sessions', sessionsRoutes);
 
 app.get('/api/health', (req, res) => {
