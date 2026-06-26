@@ -23,28 +23,31 @@ jobs:
       - name: Install backend dependencies
         run: |
           cd backend
-          npm install
+          npm install --omit=dev
 
-      - name: Install frontend dependencies
+      - name: Install and build frontend
         run: |
           cd frontend
           npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend
           npm run build
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
-          NEXT_PUBLIC_API_URL: https://repomind-app.azurewebsites.net
 
-      - name: Upload artifact for deployment job
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r backend deploy/backend
+          cp -r frontend/.next deploy/frontend/.next
+          cp -r frontend/public deploy/frontend/public 2>/dev/null || true
+          cp package.json deploy/
+          zip -r deploy.zip deploy/
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
-          include-hidden-files: true
+          path: deploy.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,7 +57,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
@@ -71,4 +74,4 @@ jobs:
         with:
           app-name: 'repomind-app'
           slot-name: 'Production'
-          package: .
+          package: deploy.zip
