@@ -30,6 +30,9 @@ jobs:
           cd frontend
           npm install
           npm run build
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
