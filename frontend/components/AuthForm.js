@@ -243,7 +243,7 @@ export default function AuthForm({ mode }) {
 
             {isLogin && (
               <div>
-                <label className="auth-field-label">// Username_or_Email</label>
+                <label className="auth-field-label">{'// Username_or_Email'}</label>
                 <input
                   type="text" value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
@@ -259,7 +259,7 @@ export default function AuthForm({ mode }) {
             {!isLogin && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="auth-field-label">// Username</label>
+                  <label className="auth-field-label">{'// Username'}</label>
                   <input
                     type="text" value={username}
                     onChange={e => setUsername(e.target.value)}
@@ -271,7 +271,7 @@ export default function AuthForm({ mode }) {
                   />
                 </div>
                 <div>
-                  <label className="auth-field-label">// Email</label>
+                  <label className="auth-field-label">{'// Email'}</label>
                   <input
                     type="email" value={email}
                     onChange={e => setEmail(e.target.value)}
@@ -287,7 +287,7 @@ export default function AuthForm({ mode }) {
 
             {isLogin ? (
               <div>
-                <label className="auth-field-label">// Password</label>
+                <label className="auth-field-label">{'// Password'}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'} value={password}
@@ -317,7 +317,7 @@ export default function AuthForm({ mode }) {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="auth-field-label">// Password</label>
+                  <label className="auth-field-label">{'// Password'}</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'} value={password}
@@ -345,7 +345,7 @@ export default function AuthForm({ mode }) {
                   </div>
                 </div>
                 <div>
-                  <label className="auth-field-label">// Confirm Password</label>
+                  <label className="auth-field-label">{'// Confirm Password'}</label>
                   <div className="relative">
                     <input
                       type={showConfirm ? 'text' : 'password'} value={confirmPassword}
