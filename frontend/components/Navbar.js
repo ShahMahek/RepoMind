@@ -8,13 +8,18 @@ export default function Navbar({ githubStatus, onDisconnect, onConnect }) {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loadingToken, setLoadingToken] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
 async function openTokenModal() {
     setShowTokenModal(true);
     setLoadingToken(true);
     try {
       const data = await githubAPI.getToken();
-      if (data.hasToken) {
+      if (data.hasToken && !githubStatus?.tokenExpired) {
         setToken(data.token);
+        setTokenExpired(false);
+      } else if (data.hasToken && githubStatus?.tokenExpired) {
+        setToken('');
+        setTokenExpired(true);
       }
     } catch (err) {
       // No token stored, fine
@@ -160,9 +165,9 @@ async function openTokenModal() {
       {/* ─── Token Modal ──────────────────────── */}
       {showTokenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center
-          bg-black/30 backdrop-blur-sm">
-          <div className="bg-white border border-brand-border rounded-2xl shadow-xl
-            w-full max-w-md mx-4 p-6">
+        bg-black/30 backdrop-blur-sm px-4">
+         <div className="bg-white border border-brand-border rounded-2xl shadow-xl
+            w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto modal-scroll">
 
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
@@ -186,9 +191,9 @@ async function openTokenModal() {
               </button>
             </div>
 
-            {/* Steps hint */}
+           {/* Steps hint */}
             <div className="bg-brand-darkGray border border-brand-border rounded-lg
-  p-3 mb-4 text-xs text-brand-textMuted space-y-1">
+              p-3 mb-3 text-xs text-brand-textMuted space-y-1">
               <p className="font-medium text-brand-text mb-1">How to get your token:</p>
               <p>1. Go to <span className="text-brand-green font-medium">
                 github.com → Settings → Developer Settings</span></p>
@@ -202,12 +207,12 @@ async function openTokenModal() {
                 <p>✅ <code className="bg-brand-darkGray border border-brand-border px-1
       rounded font-bold">repo</code>
                   {' '}<span className="text-brand-textMuted">— tick the top level one</span></p>
+                  <p>✅ <code className="bg-brand-darkGray border border-brand-border px-1
+        rounded">read:org</code>
+                    {' '}<span className="text-brand-textMuted">— under admin:org section</span></p>
                 <p>✅ <code className="bg-brand-darkGray border border-brand-border px-1
       rounded">read:user</code>
                   {' '}<span className="text-brand-textMuted">— under user section</span></p>
-                <p>✅ <code className="bg-brand-darkGray border border-brand-border px-1
-      rounded">read:org</code>
-                  {' '}<span className="text-brand-textMuted">— under admin:org section</span></p>
 
                 <p>⚠️ <code className="bg-brand-darkGray border border-brand-border px-1
                   rounded">delete_repo</code>
@@ -223,7 +228,18 @@ async function openTokenModal() {
             </div>
 
             {/* Token input */}
+            {/* Token input */}
             <div className="mb-4">
+              {tokenExpired && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3
+                  py-2.5 mb-3 flex items-start gap-2">
+                  <span className="text-red-500 text-sm flex-shrink-0">⚠️</span>
+                  <p className="text-red-600 text-xs leading-relaxed">
+                    Your previous token has expired or been deleted. Please generate
+                    a new token from GitHub following the steps above and paste it below.
+                  </p>
+                </div>
+              )}
               <label className="block text-xs font-medium text-brand-textMuted
                 mb-1.5 uppercase tracking-wide">
                 Personal Access Token
@@ -253,7 +269,7 @@ async function openTokenModal() {
             {/* Buttons */}
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowTokenModal(false); setError(''); setToken(''); }}
+                onClick={() => { setShowTokenModal(false); setError(''); setToken(''); setTokenExpired(false); }}
                 className="flex-1 px-4 py-2.5 rounded-lg border border-brand-border
                   text-brand-textMuted hover:text-brand-text text-sm transition-colors"
               >
