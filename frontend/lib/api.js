@@ -16,8 +16,11 @@ async function request(endpoint, options = {}) {
     headers,
   });
 
-  // Auto logout on 401
-  if (response.status === 401) {
+ // Auto logout on 401 — but NOT for login/register, since those return 401
+  // for plain "wrong credentials", not "expired session".
+  const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register';
+
+  if (response.status === 401 && !isAuthEndpoint) {
     clearAuth();
     window.location.href = '/login';
     return;

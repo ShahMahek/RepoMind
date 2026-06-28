@@ -140,9 +140,13 @@ router.post('/logout', async (req, res) => {
         const { githubContainer } = await getCosmosClient();
         const docId = `gh_${decoded.userId}`;
         try {
-          await githubContainer.item(docId, decoded.userId).delete();
+          const { resource: existing } = await githubContainer.item(docId, docId).read();
+          if (existing) {
+            existing.disconnected = true;
+            await githubContainer.item(docId, docId).replace(existing);
+          }
         } catch (e) {
-          // Already disconnected, fine
+          // No connection doc exists, fine
         }
       } catch (e) {
         // Invalid token, fine

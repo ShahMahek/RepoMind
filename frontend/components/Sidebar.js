@@ -8,6 +8,7 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
     const router = useRouter();
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         loadSessions();
@@ -36,7 +37,13 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
     }
 
     async function handleLogout() {
-        try { await authAPI.logout(); } catch (err) { }
+        if (loggingOut) return;
+        setLoggingOut(true);
+        try {
+            await authAPI.logout();
+        } catch (err) {
+            // Continue logout even if API fails
+        }
         clearAuth();
         router.push('/login');
     }
@@ -53,7 +60,7 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
     return (
         <div className="w-64 bg-brand-darkGray border-r border-brand-border
   flex flex-col flex-shrink-0" style={{ height: 'calc(100vh - 57px)' }}>
-           {/* ─── New Chat ───────────────────────────── */}
+            {/* ─── New Chat ───────────────────────────── */}
             <div className="px-3 pt-3 pb-3">
                 <button
                     onClick={onNewChat}
@@ -131,9 +138,11 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
             <div className="p-3 border-t border-brand-border">
                 <button
                     onClick={handleLogout}
+                    disabled={loggingOut}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2
-            text-brand-textMuted hover:text-red-500 hover:bg-red-50 text-sm
-            rounded-lg transition-colors border border-brand-border"
+text-brand-textMuted hover:text-red-500 hover:bg-red-50 text-sm
+rounded-lg transition-colors border border-brand-border disabled:opacity-50
+disabled:cursor-not-allowed"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2">
@@ -141,7 +150,7 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
                         <polyline points="16 17 21 12 16 7" />
                         <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
-                    Logout
+                    {loggingOut ? 'Logging out...' : 'Logout'}
                 </button>
             </div>
         </div>

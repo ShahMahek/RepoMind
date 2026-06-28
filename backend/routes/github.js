@@ -17,7 +17,7 @@ router.post('/connect', authMiddleware, async (req, res) => {
         error: 'Invalid token format. Token should start with ghp_ or github_pat_'
       });
     }
- console.log('Attempting to connect with token:', token.substring(0, 10) + '...');
+    console.log('Attempting to connect with token:', token.substring(0, 10) + '...');
     // Verify token works by calling GitHub API
     let githubUser;
     try {
@@ -50,11 +50,10 @@ router.post('/connect', authMiddleware, async (req, res) => {
       githubAvatarUrl: githubUser.avatar_url,
       githubProfileUrl: githubUser.html_url,
       connectedAt: new Date().toISOString(),
+      disconnected: false,
     };
-     console.log('Saving connection for userId:', req.user.userId, 'id:', connection.id);
 
     const result = await githubContainer.items.upsert(connection);
-    console.log('Saved connection:', result.resource?.id);
 
 
     res.json({
@@ -75,17 +74,21 @@ router.get('/status', authMiddleware, async (req, res) => {
     const { githubContainer } = await getCosmosClient();
 
     const { resources } = await githubContainer.items
-  .query({
-    query: 'SELECT * FROM c WHERE c.id = @id',
-    parameters: [{ name: '@id', value: `gh_${req.user.userId}` }],
-  }, { enableCrossPartitionQuery: true })
-  .fetchAll({ enableCrossPartitionQuery: true });
+      .query({
+        query: 'SELECT * FROM c WHERE c.id = @id',
+        parameters: [{ name: '@id', value: `gh_${req.user.userId}` }],
+      }, { enableCrossPartitionQuery: true })
+      .fetchAll({ enableCrossPartitionQuery: true });
 
     if (resources.length === 0) {
       return res.json({ connected: false });
     }
 
     const conn = resources[0];
+
+    if (conn.disconnected) {
+      return res.json({ connected: false });
+    }
 
     // Verify token is still valid
     try {
@@ -124,8 +127,14 @@ router.delete('/disconnect', authMiddleware, async (req, res) => {
     const { githubContainer } = await getCosmosClient();
     const docId = `gh_${req.user.userId}`;
     try {
-      await githubContainer.item(docId, req.user.userId).delete();
-    } catch (e) {}
+      const { resource: existing } = await githubContainer.item(docId, docId).read();
+      if (existing) {
+        existing.disconnected = true;
+        await githubContainer.item(docId, docId).replace(existing);
+      }
+    } catch (e) {
+      // No connection doc exists, fine
+    }
     res.json({ message: 'GitHub disconnected successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to disconnect GitHub.' });
@@ -138,15 +147,15 @@ router.delete('/disconnect', authMiddleware, async (req, res) => {
 router.get('/token', authMiddleware, async (req, res) => {
   try {
     const { githubContainer } = await getCosmosClient();
-
     const { resources } = await githubContainer.items
-      .query({
-        query: 'SELECT * FROM c WHERE c.userId = @userId',
-        parameters: [{ name: '@userId', value: req.user.userId }],
-      })
-      .fetchAll({ enableCrossPartitionQuery: true });
-
-    console.log('Token query result:', resources.length, 'userId:', req.user.userId);
+      .query(
+        {
+          query: 'SELECT * FROM c WHERE c.userId = @userId',
+          parameters: [{ name: '@userId', value: req.user.userId }],
+        },
+        { enableCrossPartitionQuery: true }
+      )
+      .fetchAll();
 
     if (resources.length === 0) {
       return res.json({ hasToken: false });
@@ -157,7 +166,6 @@ router.get('/token', authMiddleware, async (req, res) => {
       token: resources[0].accessToken,
     });
   } catch (err) {
-    console.error('Get token error:', err);
     res.status(500).json({ error: 'Failed to get token.' });
   }
 });
