@@ -38,18 +38,9 @@ function createMcpServer() {
 
   for (const toolDef of MCP_TOOLS) {
     const { name, description, parameters } = toolDef.function;
-
-    const filteredParameters = {
-      ...parameters,
-      properties: Object.fromEntries(
-        Object.entries(parameters?.properties || {}).filter(([k]) => k !== 'userId')
-      ),
-      required: (parameters?.required || []).filter(k => k !== 'userId'),
-    };
-    const zodShape = buildZodShape(filteredParameters);
+    const zodShape = buildZodShape(parameters); // ← no filtering, userId stays in schema
 
     server.tool(name, description, zodShape, async (args) => {
-      // userId comes from the agent passing it as a tool argument
       const userId = args.userId || null;
       if (!userId) {
         return {
