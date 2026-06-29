@@ -3,11 +3,8 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { z } = require('zod');
 const { MCP_TOOLS, executeTool } = require('../mcp/index');
-const { getMostRecentGithubUser } = require('../mcp/github-client');
 
 const router = express.Router();
-
-console.log('🆕 [MCP] routes/mcp.js loaded — VERSION MARKER v3-debug');
 
 function jsonSchemaPropToZod(propSchema) {
   let zodType;
@@ -62,35 +59,33 @@ function createMcpServer() {
     const zodShape = buildZodShape(parameters);
 
     server.tool(name, description, zodShape, async (args) => {
-  console.log('🆕 [MCP] v3-debug handler entered for tool:', name);
-  console.log('🆕 [MCP] FULL args object:', JSON.stringify(args));
+      let userId = args && args.userId ? args.userId : null;
+      const toolArgs = { ...args };
+      delete toolArgs.userId;
 
-  let userId = args && args.userId ? args.userId : null;
-  const toolArgs = { ...args };
-  delete toolArgs.userId;
+      if (!userId) {
+        console.error(`🚨 [MCP] userId missing from model for tool "${name}" — refusing to guess, failing safely.`);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: true,
+              message: '⚠️ I lost track of who is asking. Please try your request again.',
+            }),
+          }],
+        };
+      }
 
-  if (!userId) {
-    userId = await getMostRecentGithubUser();
-    console.log('🆕 [MCP] userId missing from model, fell back to:', userId);
-  }
-
-  console.log('🆕 [MCP] final userId:', userId);
-  console.log('🆕 [MCP] remaining toolArgs:', JSON.stringify(toolArgs));
-
-  const result = await executeTool(name, toolArgs, userId);
-
-  console.log('🆕 [MCP] executeTool result:', JSON.stringify(result));
-
-  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
-});
+      console.log(`🔧 [MCP] Agent calling tool: ${name}`, toolArgs, 'for user', userId);
+      const result = await executeTool(name, toolArgs, userId);
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    });
   }
 
   return server;
 }
 
 router.post('/', async (req, res) => {
-  console.log('🆕 [MCP] v3-debug POST received, method:', req.body?.method);
-
   try {
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
