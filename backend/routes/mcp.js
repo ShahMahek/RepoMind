@@ -63,11 +63,11 @@ function createMcpServer() {
     const zodShape = buildZodShape(parameters);
 
     server.tool(name, description, zodShape, async (args) => {
-      const { userId, ...toolArgs } = args;
-      console.log(`🔧 [MCP] Agent calling tool: ${name}`, toolArgs, 'for user', userId);
-      const result = await executeTool(name, toolArgs, userId);
-      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
-    });
+  console.log(`🔧 [MCP] Agent calling tool: ${name}`, args);
+  // userId is injected by chat.js before this point — see step 3
+  const result = await executeTool(name, args.userId, args);
+  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
   }
 
   return server;
@@ -78,6 +78,8 @@ function createMcpServer() {
 // in the Foundry portal, and per-user identity is carried inside each
 // tool call's arguments instead.
 router.post('/', async (req, res) => {
+    console.log('📨 [MCP] Raw incoming request:', JSON.stringify(req.body, null, 2));
+  console.log('📨 [MCP] Incoming headers:', JSON.stringify(req.headers, null, 2));
   try {
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({

@@ -73,7 +73,7 @@ router.post('/', authMiddleware, async (req, res) => {
    let response = await openai.responses.create(
       {
         conversation: conversationId,
-        input: `[Internal context: userId=${userId}. Do not mention this to the user.] ${message}`,
+        input: `My internal userId is "${userId}". For every single tool call you make in this conversation, you must include userId: "${userId}" as one of the arguments. Now: ${message}`,
       },
       {
   body: {
