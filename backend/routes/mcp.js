@@ -8,69 +8,69 @@ const router = express.Router();
 
 // ─── Convert your existing JSON-schema tool defs into Zod shapes ───────
 function jsonSchemaPropToZod(propSchema) {
-  let zodType;
+    let zodType;
 
-  switch (propSchema.type) {
-    case 'string':
-      zodType = propSchema.enum ? z.enum(propSchema.enum) : z.string();
-      break;
-    case 'number':
-      zodType = z.number();
-      break;
-    case 'boolean':
-      zodType = z.boolean();
-      break;
-    case 'array':
-      zodType = z.array(z.string());
-      break;
-    default:
-      zodType = z.any();
-  }
+    switch (propSchema.type) {
+        case 'string':
+            zodType = propSchema.enum ? z.enum(propSchema.enum) : z.string();
+            break;
+        case 'number':
+            zodType = z.number();
+            break;
+        case 'boolean':
+            zodType = z.boolean();
+            break;
+        case 'array':
+            zodType = z.array(z.string());
+            break;
+        default:
+            zodType = z.any();
+    }
 
-  if (propSchema.description) {
-    zodType = zodType.describe(propSchema.description);
-  }
+    if (propSchema.description) {
+        zodType = zodType.describe(propSchema.description);
+    }
 
-  return zodType;
+    return zodType;
 }
 
 function buildZodShape(parameters) {
-  const shape = {};
-  const required = new Set(parameters?.required || []);
+    const shape = {};
+    const required = new Set(parameters?.required || []);
 
-  for (const [key, propSchema] of Object.entries(parameters?.properties || {})) {
-    let zodType = jsonSchemaPropToZod(propSchema);
-    if (!required.has(key)) {
-      zodType = zodType.optional();
+    for (const [key, propSchema] of Object.entries(parameters?.properties || {})) {
+        let zodType = jsonSchemaPropToZod(propSchema);
+        if (!required.has(key)) {
+            zodType = zodType.optional();
+        }
+        shape[key] = zodType;
     }
-    shape[key] = zodType;
-  }
 
-  return shape;
+    return shape;
 }
 
 // ─── Build a fresh McpServer instance with all tools registered ────────
 // userId now arrives per tool-call as a tool argument, not a connection
 // header — so this no longer needs a userId parameter.
 function createMcpServer() {
-  const server = new McpServer({
-    name: 'repomind-github-tools',
-    version: '1.0.0',
-  });
+    const server = new McpServer({
+        name: 'repomind-github-tools',
+        version: '1.0.0',
+    });
 
-  for (const toolDef of MCP_TOOLS) {
-    const { name, description, parameters } = toolDef.function;
-    const zodShape = buildZodShape(parameters);
+    for (const toolDef of MCP_TOOLS) {
+        const { name, description, parameters } = toolDef.function;
+        const zodShape = buildZodShape(parameters);
 
-    server.tool(name, description, zodShape, async (args) => {
-  console.log(`🔧 [MCP] Agent calling tool: ${name}`, args);
-  // userId is injected by chat.js before this point — see step 3
-  const result = await executeTool(name, args.userId, args);
-  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
-});
-  }
+        server.tool(name, description, zodShape, async (args) => {
+            const { userId, ...toolArgs } = args;
+            console.log(`🔧 [MCP] Agent calling tool: ${name}`, toolArgs, 'for user', userId);
+            const result = await executeTool(name, toolArgs, userId);
+            return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+        });
+    }
 
-  return server;
+    return server;
 }
 
 // ─── Stateless Streamable HTTP endpoint ─────────────────────────────────
@@ -79,39 +79,39 @@ function createMcpServer() {
 // tool call's arguments instead.
 router.post('/', async (req, res) => {
     console.log('📨 [MCP] Raw incoming request:', JSON.stringify(req.body, null, 2));
-  console.log('📨 [MCP] Incoming headers:', JSON.stringify(req.headers, null, 2));
-  try {
-    const server = createMcpServer();
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
+    console.log('📨 [MCP] Incoming headers:', JSON.stringify(req.headers, null, 2));
+    try {
+        const server = createMcpServer();
+        const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+        });
 
-    res.on('close', () => {
-      transport.close();
-      server.close();
-    });
+        res.on('close', () => {
+            transport.close();
+            server.close();
+        });
 
-    await server.connect(transport);
-    await transport.handleRequest(req, res, req.body);
-  } catch (err) {
-    console.error('MCP request error:', err.message || err);
-    if (!res.headersSent) {
-      res.status(500).json({
-        jsonrpc: '2.0',
-        error: { code: -32603, message: 'Internal server error' },
-        id: null,
-      });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+        console.error('MCP request error:', err.message || err);
+        if (!res.headersSent) {
+            res.status(500).json({
+                jsonrpc: '2.0',
+                error: { code: -32603, message: 'Internal server error' },
+                id: null,
+            });
+        }
     }
-  }
 });
 
 // MCP clients may probe with GET; stateless servers don't support server push.
 router.get('/', (req, res) => {
-  res.status(405).json({
-    jsonrpc: '2.0',
-    error: { code: -32000, message: 'Method not allowed in stateless mode.' },
-    id: null,
-  });
+    res.status(405).json({
+        jsonrpc: '2.0',
+        error: { code: -32000, message: 'Method not allowed in stateless mode.' },
+        id: null,
+    });
 });
 
 module.exports = router;
