@@ -81,7 +81,7 @@ router.post('/', authMiddleware, async (req, res) => {
     tool_resources: {
       mcp: [
         {
-          server_label: 'repomind_github_tools',
+          server_label: 'repomind-github-tools',
           headers: {
             Authorization: `Bearer ${signMcpToken(userId)}`,
           },
