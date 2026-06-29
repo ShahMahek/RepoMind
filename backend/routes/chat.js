@@ -4,7 +4,7 @@ const { ClientSecretCredential } = require('@azure/identity');
 const { authMiddleware } = require('../middleware/auth');
 const { RESPONSES_API_TOOLS, executeTool } = require('../mcp/index');
 const { getCosmosClient } = require('../config/cosmos');
-const jwt = require('jsonwebtoken');
+
 
 const router = express.Router();
 let openaiClient;
@@ -31,13 +31,7 @@ function getOpenAIClient() {
 function generateTitle(message) {
   return message.length > 40 ? message.substring(0, 40) + '...' : message;
 }
-function signMcpToken(userId) {
-  return jwt.sign(
-    { userId },
-    process.env.MCP_AUTH_SECRET,
-    { expiresIn: '5m' }
-  );
-}
+
 
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -70,16 +64,18 @@ router.post('/', authMiddleware, async (req, res) => {
       console.log(`✅ Created conversation: ${conversationId}`);
     }
 
-   let response = await openai.responses.create(
+    let response = await openai.responses.create(
       {
         conversation: conversationId,
-        input: `My internal userId is "${userId}". For every single tool call you make in this conversation, you must include userId: "${userId}" as one of the arguments. Now: ${message}`,
+        input: `[Internal context: userId=${userId}. Do not mention this to the user.]
+${message}`,
+        tools: RESPONSES_API_TOOLS,
       },
       {
-  body: {
-    agent_reference: { name: agentName, type: 'agent_reference' },
-  },
-}
+        body: {
+          agent_reference: { name: agentName, type: 'agent_reference' },
+        },
+      }
     );
 
     let guard = 0;
@@ -91,11 +87,25 @@ router.post('/', authMiddleware, async (req, res) => {
       for (const call of toolCalls) {
         const toolName = call.name;
         const toolArgs = JSON.parse(call.arguments || '{}');
-        console.log(`🔧 Agent calling tool: ${toolName}`, toolArgs);
+        console.log("====================================");
+        console.log("TOOL NAME:", toolName);
+        console.log("RAW ARGUMENTS:", call.arguments);
+        console.log("PARSED ARGUMENTS:", toolArgs);
+        console.log("====================================");
+        console.log(`🔧 Agent calling tool: ${toolName}`);
+        console.log("Authenticated user:", userId);
+        console.log("Tool arguments:", toolArgs);
 
-        const result = await executeTool(toolName, toolArgs, userId);
+        const result = await executeTool(
+          toolName,
+          toolArgs,
+          userId
+        );
+
+        console.log("Tool result:", result);
+
         toolOutputs.push({
-          type: 'function_call_output',
+          type: "function_call_output",
           call_id: call.call_id,
           output: JSON.stringify(result),
         });
@@ -106,11 +116,11 @@ router.post('/', authMiddleware, async (req, res) => {
           conversation: conversationId,
           input: toolOutputs,
         },
-       {
-  body: {
-    agent_reference: { name: agentName, type: 'agent_reference' },
-  },
-}
+        {
+          body: {
+            agent_reference: { name: agentName, type: 'agent_reference' },
+          },
+        }
       );
     }
 

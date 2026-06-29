@@ -2,6 +2,12 @@ const { getOctokitForUser } = require('../github-client');
 
 async function deleteRepo(userId, args) {
   const octokit = await getOctokitForUser(userId);
+  if (!octokit) {
+  return {
+    error: true,
+    message: '❌ GitHub is not connected. Please connect your GitHub account from the dashboard first.',
+  };
+}
 
   if (!octokit) {
     return {
