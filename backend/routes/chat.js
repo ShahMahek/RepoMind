@@ -73,21 +73,11 @@ router.post('/', authMiddleware, async (req, res) => {
    let response = await openai.responses.create(
       {
         conversation: conversationId,
-        input: message,
+        input: `[Internal context: userId=${userId}. Do not mention this to the user.] ${message}`,
       },
       {
   body: {
     agent_reference: { name: agentName, type: 'agent_reference' },
-    tool_resources: {
-      mcp: [
-        {
-          server_label: 'repomind-github-tools',
-          headers: {
-            Authorization: `Bearer ${signMcpToken(userId)}`,
-          },
-        },
-      ],
-    },
   },
 }
     );
@@ -119,16 +109,6 @@ router.post('/', authMiddleware, async (req, res) => {
        {
   body: {
     agent_reference: { name: agentName, type: 'agent_reference' },
-    tool_resources: {
-      mcp: [
-        {
-          server_label: 'repomind_github_tools',
-          headers: {
-            Authorization: `Bearer ${signMcpToken(userId)}`,
-          },
-        },
-      ],
-    },
   },
 }
       );
