@@ -189,4 +189,12 @@ async function executeTool(toolName, args, userId) {
   }
 }
 
-module.exports = { MCP_TOOLS, executeTool };
+// ─── Flatten for Responses API (needs `name` at top level, not nested under `function`) ───
+const RESPONSES_API_TOOLS = MCP_TOOLS.map(t => ({
+  type: t.type,
+  name: t.function.name,
+  description: t.function.description,
+  parameters: t.function.parameters,
+}));
+
+module.exports = { MCP_TOOLS, RESPONSES_API_TOOLS, executeTool };

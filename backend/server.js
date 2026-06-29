@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const githubRoutes = require('./routes/github');
 const chatRoutes = require('./routes/chat');
 const sessionsRoutes = require('./routes/sessions');
+const mcpRoutes = require('./routes/mcp');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/mcp', mcpRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'RepoMind API', timestamp: new Date() });
