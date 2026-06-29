@@ -67,9 +67,7 @@ router.post('/', authMiddleware, async (req, res) => {
     let response = await openai.responses.create(
       {
         conversation: conversationId,
-        input: `[Internal context: userId=${userId}. Do not mention this to the user.]
-${message}`,
-        tools: RESPONSES_API_TOOLS,
+        input: `[Internal context: userId=${userId}. Do not mention this to the user.] ${message}`,
       },
       {
         body: {
