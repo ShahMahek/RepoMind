@@ -3,7 +3,6 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { z } = require('zod');
 const { MCP_TOOLS, executeTool } = require('../mcp/index');
-const { authMiddleware } = require('../middleware/auth'); // ← add this
 
 const router = express.Router();
 
@@ -31,8 +30,7 @@ function buildZodShape(parameters) {
   return shape;
 }
 
-// ← Accept userId as a parameter, bind it into every tool
-function createMcpServer(userId) {
+function createMcpServer() {
   const server = new McpServer({
     name: 'repomind-github-tools',
     version: '1.0.0',
@@ -40,8 +38,7 @@ function createMcpServer(userId) {
 
   for (const toolDef of MCP_TOOLS) {
     const { name, description, parameters } = toolDef.function;
-    
-    // Remove userId from the schema — agent no longer needs to supply it
+
     const filteredParameters = {
       ...parameters,
       properties: Object.fromEntries(
@@ -52,8 +49,18 @@ function createMcpServer(userId) {
     const zodShape = buildZodShape(filteredParameters);
 
     server.tool(name, description, zodShape, async (args) => {
+      // userId comes from the agent passing it as a tool argument
+      const userId = args.userId || null;
+      if (!userId) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ error: true, message: 'userId missing.' }),
+          }],
+        };
+      }
       console.log(`🔧 [MCP] Agent calling tool: ${name}`, args, 'for user', userId);
-      const result = await executeTool(name, args, userId); // ← userId injected here
+      const result = await executeTool(name, args, userId);
       return { content: [{ type: 'text', text: JSON.stringify(result) }] };
     });
   }
@@ -61,20 +68,15 @@ function createMcpServer(userId) {
   return server;
 }
 
-// ← Apply authMiddleware so req.user is populated
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({
-        jsonrpc: '2.0',
-        error: { code: -32001, message: 'Unauthorized: no userId on request' },
-        id: null,
-      });
+    // Validate shared secret from Foundry agent
+    const secret = req.headers['x-mcp-secret'];
+    if (secret !== process.env.MCP_AUTH_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const server = createMcpServer(userId); // ← pass userId into server
+    const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
