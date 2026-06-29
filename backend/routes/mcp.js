@@ -3,6 +3,7 @@ const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { z } = require('zod');
 const { MCP_TOOLS, executeTool } = require('../mcp/index');
+const { getMostRecentGithubUser } = require('../mcp/github-client');
 
 const router = express.Router();
 
@@ -61,22 +62,27 @@ function createMcpServer() {
     const zodShape = buildZodShape(parameters);
 
     server.tool(name, description, zodShape, async (args) => {
-      console.log('🆕 [MCP] v3-debug handler entered for tool:', name);
-      console.log('🆕 [MCP] FULL args object:', JSON.stringify(args));
+  console.log('🆕 [MCP] v3-debug handler entered for tool:', name);
+  console.log('🆕 [MCP] FULL args object:', JSON.stringify(args));
 
-      const userId = args && args.userId ? args.userId : null;
-      const toolArgs = { ...args };
-      delete toolArgs.userId;
+  let userId = args && args.userId ? args.userId : null;
+  const toolArgs = { ...args };
+  delete toolArgs.userId;
 
-      console.log('🆕 [MCP] extracted userId:', userId);
-      console.log('🆕 [MCP] remaining toolArgs:', JSON.stringify(toolArgs));
+  if (!userId) {
+    userId = await getMostRecentGithubUser();
+    console.log('🆕 [MCP] userId missing from model, fell back to:', userId);
+  }
 
-      const result = await executeTool(name, toolArgs, userId);
+  console.log('🆕 [MCP] final userId:', userId);
+  console.log('🆕 [MCP] remaining toolArgs:', JSON.stringify(toolArgs));
 
-      console.log('🆕 [MCP] executeTool result:', JSON.stringify(result));
+  const result = await executeTool(name, toolArgs, userId);
 
-      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
-    });
+  console.log('🆕 [MCP] executeTool result:', JSON.stringify(result));
+
+  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+});
   }
 
   return server;

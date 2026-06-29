@@ -18,4 +18,17 @@ async function getOctokitForUser(userId) {
   return new Octokit({ auth: resources[0].accessToken });
 }
 
-module.exports = { getOctokitForUser };
+// Temporary fallback for when the agent doesn't reliably forward userId.
+// Returns the userId of whatever GitHub connection exists in Cosmos right now.
+// Only safe while there's a single connected user — revisit before multi-user use.
+async function getMostRecentGithubUser() {
+  const { githubContainer } = await getCosmosClient();
+
+  const { resources } = await githubContainer.items
+    .query({ query: 'SELECT * FROM c OFFSET 0 LIMIT 1' })
+    .fetchAll();
+
+  return resources.length > 0 ? resources[0].userId : null;
+}
+
+module.exports = { getOctokitForUser, getMostRecentGithubUser };
