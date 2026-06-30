@@ -15,6 +15,9 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
 
   useEffect(() => {
     if (!isLoggedIn()) router.push('/login');
@@ -44,6 +47,13 @@ function DashboardContent() {
       }
     }
     loadStatus();
+  }, []);
+
+  function handleMessageSent() {
+    setSidebarRefreshKey(prev => prev + 1);
+  }
+  useEffect(() => {
+    if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
 
   function showNotification(type, message) {
@@ -96,22 +106,48 @@ function DashboardContent() {
         onDisconnect={handleDisconnect}
         onConnect={handleConnect}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
 
-        {/* Sidebar */}
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="sidebar-overlay fixed inset-0 bg-black/30 z-40 md:hidden"
+          />
+        )}
+
+        {/* Floating toggle when closed */}
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="absolute top-3 left-3 z-30 p-2 rounded-lg border
+        border-brand-border bg-white text-brand-textMuted
+        hover:text-brand-text hover:bg-brand-medGray transition-colors shadow-sm"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+        )}
+
         <Sidebar
           currentSessionId={currentSessionId}
-          onSessionSelect={setCurrentSessionId}
-          onNewChat={handleNewChat}
+          onSessionSelect={(id) => { setCurrentSessionId(id); setSidebarOpen(false); }}
+          onNewChat={() => { handleNewChat(); setSidebarOpen(false); }}
+          refreshKey={sidebarRefreshKey}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
-       {/* Main content */}
         <main className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 flex flex-col overflow-hidden p-4">
             <ChatWindow
               githubConnected={githubStatus?.connected || false}
               sessionId={currentSessionId}
-              onTitleUpdate={() => {}}
+              onTitleUpdate={() => { }}
+              onMessageSent={handleMessageSent}
             />
           </div>
         </main>

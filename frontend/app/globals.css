@@ -329,3 +329,27 @@ html, body {
 .modal-scroll::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Sidebar toggle ─────────────────────────── */
+.sidebar-panel {
+  transition: transform 0.2s ease-in-out, width 0.2s ease-in-out;
+}
+
+@media (max-width: 767px) {
+  .sidebar-panel.closed {
+    transform: translateX(-100%);
+  }
+}
+
+@media (min-width: 768px) {
+  .sidebar-panel.closed {
+    width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: none;
+  }
+}
+
+.sidebar-overlay {
+  animation: fadeIn 0.15s ease-out;
+}

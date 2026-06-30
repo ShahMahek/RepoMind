@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { sessionsAPI, authAPI } from '../lib/api';
 import { clearAuth } from '../lib/auth';
 
-export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }) {
+export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat, refreshKey, isOpen, onClose }) {
     const router = useRouter();
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,7 +12,7 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
 
     useEffect(() => {
         loadSessions();
-    }, [currentSessionId]);
+    }, [currentSessionId, refreshKey]);
 
     async function loadSessions() {
         try {
@@ -58,15 +58,30 @@ export default function Sidebar({ currentSessionId, onSessionSelect, onNewChat }
     }
 
     return (
-        <div className="w-64 bg-brand-darkGray border-r border-brand-border
-  flex flex-col flex-shrink-0" style={{ height: 'calc(100vh - 57px)' }}>
-            {/* ─── New Chat ───────────────────────────── */}
-            <div className="px-3 pt-3 pb-3">
+        <div className={`sidebar-panel fixed md:static top-0 left-0 z-50
+            w-64 bg-brand-darkGray border-r border-brand-border
+            flex flex-col flex-shrink-0
+            ${isOpen ? '' : 'closed'}`}
+            style={{ height: 'calc(100vh - 57px)', top: '57px' }}>
+
+            {/* ─── Toggle + New Chat ──────────────────── */}
+            <div className="px-3 pt-3 pb-3 flex items-center gap-2">
+                <button
+                    onClick={onClose}
+                    className="p-2 rounded-lg border border-brand-border text-brand-textMuted
+                        hover:text-brand-text hover:bg-brand-medGray transition-colors flex-shrink-0"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <line x1="9" y1="3" x2="9" y2="21" />
+                    </svg>
+                </button>
                 <button
                     onClick={onNewChat}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2
-      bg-brand-green hover:bg-brand-greenHover text-white text-sm font-medium
-      rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2
+                        bg-brand-green hover:bg-brand-greenHover text-white text-sm font-medium
+                        rounded-lg transition-colors"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2.5">
