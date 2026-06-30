@@ -30,11 +30,7 @@ function LoadingMessage() {
 
   return <span>{LOADING_MESSAGES[index]}</span>;
 }
-useEffect(() => {
-  if (!loading && githubConnected) {
-    inputRef.current?.focus();
-  }
-}, [loading]);
+
 
 export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, onMessageSent, onNewChat }) {
   const [messages, setMessages] = useState([]);
@@ -57,6 +53,13 @@ export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+   // ─── Autofocus input after loading finishes ─────────────
+  useEffect(() => {
+    if (!loading && githubConnected) {
+      inputRef.current?.focus();
+    }
+  }, [loading]);
 
   async function loadSession() {
     setLoadingSession(true);
@@ -239,7 +242,7 @@ export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, 
       <div className="px-4 py-3 border-t border-brand-border bg-brand-darkGray">
         <div className="flex items-end gap-2">
           <textarea
-            ref={inputRef}
+          ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
