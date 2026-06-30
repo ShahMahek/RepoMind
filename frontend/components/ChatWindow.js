@@ -30,6 +30,11 @@ function LoadingMessage() {
 
   return <span>{LOADING_MESSAGES[index]}</span>;
 }
+useEffect(() => {
+  if (!loading && githubConnected) {
+    inputRef.current?.focus();
+  }
+}, [loading]);
 
 export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, onMessageSent, onNewChat }) {
   const [messages, setMessages] = useState([]);
@@ -37,6 +42,7 @@ export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, 
   const [loading, setLoading] = useState(false);
   const [loadingSession, setLoadingSession] = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   // ─── Load session messages when sessionId changes ──────
   useEffect(() => {
@@ -233,6 +239,7 @@ export default function ChatWindow({ githubConnected, sessionId, onTitleUpdate, 
       <div className="px-4 py-3 border-t border-brand-border bg-brand-darkGray">
         <div className="flex items-end gap-2">
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}

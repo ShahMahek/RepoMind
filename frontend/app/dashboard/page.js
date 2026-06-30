@@ -134,8 +134,11 @@ function DashboardContent() {
 
         <Sidebar
           currentSessionId={currentSessionId}
-          onSessionSelect={(id) => { setCurrentSessionId(id); setSidebarOpen(false); }}
-          onNewChat={() => { handleNewChat(); setSidebarOpen(false); }}
+          onSessionSelect={(id) => {
+            setCurrentSessionId(id);
+            if (window.innerWidth < 768) setSidebarOpen(false);
+          }}
+          onNewChat={handleNewChat}
           refreshKey={sidebarRefreshKey}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -148,6 +151,7 @@ function DashboardContent() {
               sessionId={currentSessionId}
               onTitleUpdate={() => { }}
               onMessageSent={handleMessageSent}
+              onNewChat={handleNewChat}
             />
           </div>
         </main>
